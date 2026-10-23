@@ -161,19 +161,9 @@ go run client.go
 
 ---
 
-## 📄 Resume Description Bullet Points
-
-> **Event-Driven Distributed RPC Chat Platform** | *Go, net/rpc, Goroutines, Channels, sync.RWMutex*
-> - Engineered an event-driven pub/sub chat coordinator in Go using native 
-et/rpc over TCP, supporting up to **500+ concurrent simulated users** with **47,700+ messages/sec** broadcast throughput.
-> - Diagnosed and resolved a critical circular-wait deadlock vulnerability by decoupling lock acquisition from channel delivery and replacing unbuffered channels with non-blocking buffered worker queues.
-> - Achieved sub-millisecond median latency (**630 µs P50**) and **<12 ms P99** latency under heavy multi-client contention with zero data races.
-> - Built an automated multi-tier benchmarking suite to profile connection registration rates, fan-out throughput (**935k+ deliveries/sec**), and percentile latency distributions.
-
----
-
 ## 👤 Author
 
 **Mohamed Rslan**
 - GitHub: [@Mohamed-Rslan](https://github.com/Mohamed-Rslan)
 - Email: [m.rslan4488@gmail.com](mailto:m.rslan4488@gmail.com)
+
