@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
     "fmt"
@@ -19,6 +19,22 @@ func NewChatRoom() *ChatRoom {
     }
 }
 
+// safeSend delivers a message to a channel non-blockingly and recovers if the channel was closed concurrently.
+func safeSend(ch chan string, msg string) (sent bool) {
+    defer func() {
+        if r := recover(); r != nil {
+            sent = false
+        }
+    }()
+
+    select {
+    case ch <- msg:
+        return true
+    default:
+        return false
+    }
+}
+
 // RegisterClient registers a client with a buffered channel and notifies existing clients.
 func (c *ChatRoom) RegisterClient(args *commons.RegisterArgs, reply *string) error {
     if args.Nickname == "" {
@@ -28,6 +44,7 @@ func (c *ChatRoom) RegisterClient(args *commons.RegisterArgs, reply *string) err
     c.mu.Lock()
     // If client already registered, close old channel cleanly
     if oldCh, exists := c.clients[args.Nickname]; exists {
+        delete(c.clients, args.Nickname)
         close(oldCh)
     }
 
@@ -48,11 +65,7 @@ func (c *ChatRoom) RegisterClient(args *commons.RegisterArgs, reply *string) err
     // Notify other clients non-blockingly OUTSIDE the lock
     joinMsg := fmt.Sprintf("%s joined the chat!", args.Nickname)
     for _, ch := range targets {
-        select {
-        case ch <- joinMsg:
-        default:
-            // Buffer full or slow consumer: drop to maintain system responsiveness
-        }
+        safeSend(ch, joinMsg)
     }
 
     return nil
@@ -74,11 +87,7 @@ func (c *ChatRoom) BroadcastMessage(args *commons.MessageArgs, reply *string) er
 
     // Non-blocking fan-out delivery
     for _, ch := range targets {
-        select {
-        case ch <- message:
-        default:
-            // Client queue full - drop message for slow client to prevent system-wide lag
-        }
+        safeSend(ch, message)
     }
 
     *reply = "Message broadcasted"
@@ -124,10 +133,7 @@ func (c *ChatRoom) UnregisterClient(nickname string, reply *string) error {
     if exists {
         leaveMsg := fmt.Sprintf("%s left the chat.", nickname)
         for _, clientCh := range targets {
-            select {
-            case clientCh <- leaveMsg:
-            default:
-            }
+            safeSend(clientCh, leaveMsg)
         }
     }
 
